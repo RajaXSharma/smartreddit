@@ -4,6 +4,13 @@ import tailwindcss from '@tailwindcss/vite';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
+  manifest: {
+    name: 'Reddit Summarizer',
+    permissions: ['sidePanel', 'storage', 'activeTab'],
+    side_panel: {
+      default_path: 'sidepanel/index.html',
+    },
+  },
   vite: () => ({
     plugins: [tailwindcss()],
   }),
