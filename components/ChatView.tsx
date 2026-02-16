@@ -24,8 +24,8 @@ export function ChatView({ messages, onSendMessage }: ChatViewProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-4">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 flex flex-col gap-4 pb-4 min-h-0 overflow-y-auto scrollbar-thin">
         {messages.map((msg, i) => (
           <MessageBubble key={i} role={msg.role} content={msg.content} />
         ))}
@@ -33,7 +33,7 @@ export function ChatView({ messages, onSendMessage }: ChatViewProps) {
 
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-2 pt-3 border-t border-border"
+        className="flex items-center gap-2 pt-3 border-t border-border shrink-0"
       >
         <input
           type="text"
