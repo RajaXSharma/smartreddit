@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { PostInfo } from '../../components/PostInfo';
@@ -7,40 +7,29 @@ import { SummaryView } from '../../components/SummaryView';
 import { ChatView } from '../../components/ChatView';
 import { SettingsModal } from '../../components/SettingsModal';
 import { LoadingState } from '../../components/LoadingState';
+import { ErrorState } from '../../components/ErrorState';
 import { useUIStore } from '../../hooks/useUIStore';
+import { useRedditContent } from '../../hooks/useRedditContent';
 import { useSummaryQuery } from '../../queries/useSummaryQuery';
 import { useChatMutation } from '../../queries/useChatMutation';
-import type { ScrapedContent, ChatMessage } from '../../lib/types';
-
-// Mock data for development
-const mockContent: ScrapedContent = {
-  title: 'How does it feel to create a whole aesthetic that didn\'t exist before?',
-  body: '',
-  subreddit: 'r/midjourney',
-  author: 'Frost',
-  timestamp: '4h ago',
-  upvotes: 12500,
-  commentCount: 430,
-  upvoteRatio: 92,
-  comments: [],
-};
-
-const mockPostUrl = 'https://reddit.com/r/midjourney/example';
+import type { ChatMessage } from '../../lib/types';
 
 export default function App() {
   const { activeTab, theme } = useUIStore();
   const queryClient = useQueryClient();
-  const [content] = useState<ScrapedContent>(mockContent);
+  const { content, isLoading: contentLoading, error: contentError, refetch } = useRedditContent();
+
+  const postUrl = content ? window.location.href : '';
 
   const { data: summaryData, isLoading: summaryLoading } = useSummaryQuery(
-    mockPostUrl,
+    postUrl,
     content
   );
 
-  const chatMutation = useChatMutation(mockPostUrl, content);
+  const chatMutation = useChatMutation(postUrl, content);
 
   const messages =
-    queryClient.getQueryData<ChatMessage[]>(['chat', mockPostUrl]) || [
+    queryClient.getQueryData<ChatMessage[]>(['chat', postUrl]) || [
       {
         role: 'assistant' as const,
         content:
@@ -48,7 +37,6 @@ export default function App() {
       },
     ];
 
-  // Apply theme class to html element
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
@@ -58,7 +46,7 @@ export default function App() {
   };
 
   const handleRegenerate = () => {
-    queryClient.invalidateQueries({ queryKey: ['summary', mockPostUrl] });
+    queryClient.invalidateQueries({ queryKey: ['summary', postUrl] });
   };
 
   const handleCopy = () => {
@@ -79,43 +67,50 @@ export default function App() {
     <div className="w-[360px] h-screen bg-bg-primary text-text-primary flex flex-col relative overflow-hidden">
       <Header />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Tabs always visible */}
-        <div className="px-4 pt-4">
-          <Tabs />
+      {contentLoading ? (
+        <div className="flex-1 overflow-y-auto p-4">
+          <LoadingState />
         </div>
+      ) : contentError ? (
+        <div className="flex-1 flex items-center justify-center">
+          <ErrorState error={contentError} onRetry={refetch} />
+        </div>
+      ) : content ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-4 pt-4">
+            <Tabs />
+          </div>
 
-        {/* Summary view - scrollable with PostInfo */}
-        {activeTab === 'summary' && (
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
-            <PostInfo
-              subreddit={content.subreddit}
-              author={content.author}
-              timestamp={content.timestamp}
-              title={content.title}
-              upvotes={formatNumber(content.upvotes)}
-              comments={formatNumber(content.commentCount)}
-              upvoteRatio={`${content.upvoteRatio}%`}
-            />
-            {summaryLoading ? (
-              <LoadingState />
-            ) : summaryData ? (
-              <SummaryView
-                data={summaryData}
-                onRegenerate={handleRegenerate}
-                onCopy={handleCopy}
+          {activeTab === 'summary' && (
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <PostInfo
+                subreddit={content.subreddit}
+                author={content.author}
+                timestamp={content.timestamp}
+                title={content.title}
+                upvotes={formatNumber(content.upvotes)}
+                comments={formatNumber(content.commentCount)}
+                upvoteRatio={`${content.upvoteRatio}%`}
               />
-            ) : null}
-          </div>
-        )}
+              {summaryLoading ? (
+                <LoadingState />
+              ) : summaryData ? (
+                <SummaryView
+                  data={summaryData}
+                  onRegenerate={handleRegenerate}
+                  onCopy={handleCopy}
+                />
+              ) : null}
+            </div>
+          )}
 
-        {/* Chat view - takes full remaining height */}
-        {activeTab === 'chat' && (
-          <div className="flex-1 flex flex-col overflow-hidden px-4 pb-4">
-            <ChatView messages={messages} onSendMessage={handleSendMessage} />
-          </div>
-        )}
-      </div>
+          {activeTab === 'chat' && (
+            <div className="flex-1 flex flex-col overflow-hidden px-4 pb-4">
+              <ChatView messages={messages} onSendMessage={handleSendMessage} />
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <SettingsModal />
     </div>
