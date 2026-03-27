@@ -1,3 +1,12 @@
+import type {
+  ScrapedContent,
+  Comment,
+  RedditResponse,
+  RedditPostData,
+  RedditCommentChild,
+  RedditListing,
+} from './types';
+
 export function formatRelativeTime(utcSeconds: number): string {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - utcSeconds;
@@ -23,4 +32,21 @@ export function formatRelativeTime(utcSeconds: number): string {
     const years = Math.floor(diff / 31536000);
     return `${years}y ago`;
   }
+}
+
+function parsePost(postData: RedditPostData): Omit<ScrapedContent, 'comments'> {
+  const body = postData.selftext === '[deleted]' || postData.selftext === '[removed]'
+    ? ''
+    : postData.selftext;
+
+  return {
+    title: postData.title,
+    body,
+    subreddit: postData.subreddit_name_prefixed,
+    author: postData.author,
+    timestamp: formatRelativeTime(postData.created_utc),
+    upvotes: postData.score,
+    commentCount: postData.num_comments,
+    upvoteRatio: Math.round(postData.upvote_ratio * 100),
+  };
 }
