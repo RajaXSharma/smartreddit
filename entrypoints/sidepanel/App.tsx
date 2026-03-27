@@ -79,21 +79,24 @@ export default function App() {
     <div className="w-[360px] h-screen bg-bg-primary text-text-primary flex flex-col relative overflow-hidden">
       <Header />
 
-      <div className="flex-1 overflow-y-auto p-4 pb-20">
-        <PostInfo
-          subreddit={content.subreddit}
-          author={content.author}
-          timestamp={content.timestamp}
-          title={content.title}
-          upvotes={formatNumber(content.upvotes)}
-          comments={formatNumber(content.commentCount)}
-          upvoteRatio={`${content.upvoteRatio}%`}
-        />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Tabs always visible */}
+        <div className="px-4 pt-4">
+          <Tabs />
+        </div>
 
-        <Tabs />
-
+        {/* Summary view - scrollable with PostInfo */}
         {activeTab === 'summary' && (
-          <>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <PostInfo
+              subreddit={content.subreddit}
+              author={content.author}
+              timestamp={content.timestamp}
+              title={content.title}
+              upvotes={formatNumber(content.upvotes)}
+              comments={formatNumber(content.commentCount)}
+              upvoteRatio={`${content.upvoteRatio}%`}
+            />
             {summaryLoading ? (
               <LoadingState />
             ) : summaryData ? (
@@ -103,11 +106,14 @@ export default function App() {
                 onCopy={handleCopy}
               />
             ) : null}
-          </>
+          </div>
         )}
 
+        {/* Chat view - takes full remaining height */}
         {activeTab === 'chat' && (
-          <ChatView messages={messages} onSendMessage={handleSendMessage} />
+          <div className="flex-1 flex flex-col overflow-hidden px-4 pb-4">
+            <ChatView messages={messages} onSendMessage={handleSendMessage} />
+          </div>
         )}
       </div>
 
