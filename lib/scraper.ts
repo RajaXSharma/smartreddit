@@ -83,3 +83,18 @@ function parseComments(commentListing: RedditListing): Comment[] {
   );
   return result;
 }
+
+export function parseRedditJson(json: RedditResponse): ScrapedContent {
+  const postData = json[0].data.children[0];
+  if (postData.kind !== 't3') {
+    throw new Error('Invalid Reddit response: expected post data');
+  }
+
+  const post = parsePost(postData.data);
+  const comments = parseComments(json[1]);
+
+  return {
+    ...post,
+    comments,
+  };
+}
