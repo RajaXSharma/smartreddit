@@ -50,3 +50,36 @@ function parsePost(postData: RedditPostData): Omit<ScrapedContent, 'comments'> {
     upvoteRatio: Math.round(postData.upvote_ratio * 100),
   };
 }
+
+function flattenComments(
+  children: (RedditCommentChild | { kind: 'more' })[],
+  result: Comment[]
+): void {
+  for (const child of children) {
+    if (child.kind !== 't1') continue;
+
+    const data = child.data;
+    result.push({
+      author: data.author,
+      text: data.body,
+      score: data.score,
+      depth: data.depth,
+    });
+
+    if (data.replies && typeof data.replies === 'object') {
+      flattenComments(
+        data.replies.data.children as (RedditCommentChild | { kind: 'more' })[],
+        result
+      );
+    }
+  }
+}
+
+function parseComments(commentListing: RedditListing): Comment[] {
+  const result: Comment[] = [];
+  flattenComments(
+    commentListing.data.children as (RedditCommentChild | { kind: 'more' })[],
+    result
+  );
+  return result;
+}
