@@ -1,15 +1,67 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
 import { useUIStore } from '../hooks/useUIStore';
-
-type ApiMode = 'free' | 'own';
+import { useSettingsStore } from '../hooks/useSettingsStore';
+import { providerList } from '../lib/providers';
+import type { ProviderId } from '../lib/types';
 
 export function SettingsModal() {
   const { isSettingsOpen, toggleSettings } = useUIStore();
-  const [apiMode, setApiMode] = useState<ApiMode>('own');
+  const {
+    activeProvider,
+    activeModel,
+    keyStatus,
+    isInitialized,
+    init,
+    setProvider,
+    setModel,
+    saveKey,
+    testConnection,
+  } = useSettingsStore();
+
   const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (isSettingsOpen && !isInitialized) {
+      init();
+    }
+  }, [isSettingsOpen, isInitialized, init]);
+
+  useEffect(() => {
+    setApiKey('');
+    setShowKey(false);
+  }, [activeProvider]);
 
   if (!isSettingsOpen) return null;
+
+  const currentProvider = providerList.find((p) => p.id === activeProvider)!;
+  const currentKeyStatus = keyStatus[activeProvider];
+
+  const handleProviderChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    await setProvider(e.target.value as ProviderId);
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setModel(e.target.value);
+  };
+
+  const handleSave = async () => {
+    if (!apiKey.trim()) return;
+    setIsSaving(true);
+    try {
+      await saveKey(activeProvider, apiKey.trim());
+      await testConnection(activeProvider);
+      setApiKey('');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    await testConnection(activeProvider);
+  };
 
   return (
     <div
@@ -29,65 +81,87 @@ export function SettingsModal() {
         </div>
 
         <div className="mb-4">
+          <label className="block text-xs font-semibold mb-2">AI Provider</label>
+          <select
+            value={activeProvider}
+            onChange={handleProviderChange}
+            className="w-full p-2.5 border border-border rounded-[8px] text-sm bg-bg-secondary"
+          >
+            {providerList.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-xs font-semibold mb-2">Model</label>
+          <select
+            value={activeModel}
+            onChange={handleModelChange}
+            className="w-full p-2.5 border border-border rounded-[8px] text-sm bg-bg-secondary"
+          >
+            {currentProvider.models.map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
           <label className="block text-xs font-semibold mb-2">
-            API Configuration
+            API Key
+            {currentKeyStatus === 'valid' && (
+              <span className="ml-2 text-green-500 font-normal">(Saved)</span>
+            )}
           </label>
-          <div
-            onClick={() => setApiMode('free')}
-            className={`flex items-center gap-2.5 p-3 border rounded-[8px] mb-2 cursor-pointer transition-colors ${
-              apiMode === 'free'
-                ? 'border-accent bg-accent-dim'
-                : 'border-border'
-            }`}
-          >
-            <div
-              className={`w-4 h-4 rounded-full border-2 ${
-                apiMode === 'free'
-                  ? 'border-accent bg-accent'
-                  : 'border-text-secondary'
-              }`}
+          <div className="relative">
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={currentKeyStatus === 'valid' ? 'Enter new key to update' : 'Enter your API key'}
+              className="w-full p-2.5 pr-10 border border-border rounded-[8px] text-sm bg-bg-secondary"
             />
-            <span className="text-sm">Use Free Tier (Limited)</span>
-          </div>
-          <div
-            onClick={() => setApiMode('own')}
-            className={`flex items-center gap-2.5 p-3 border rounded-[8px] cursor-pointer transition-colors ${
-              apiMode === 'own'
-                ? 'border-accent bg-accent-dim'
-                : 'border-border'
-            }`}
-          >
-            <div
-              className={`w-4 h-4 rounded-full border-2 ${
-                apiMode === 'own'
-                  ? 'border-accent bg-accent'
-                  : 'border-text-secondary'
-              }`}
-            />
-            <span className="text-sm">Use my own API Keys</span>
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+            >
+              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        {apiMode === 'own' && (
-          <div className="mb-4">
-            <label className="block text-xs font-semibold mb-2">
-              Gemini API Key
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your API key"
-              className="w-full p-2.5 border border-border rounded-[8px] text-sm bg-bg-secondary"
-            />
-          </div>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={handleTestConnection}
+            disabled={currentKeyStatus === 'none' && !apiKey.trim()}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border rounded-[8px] text-sm font-medium hover:bg-bg-secondary transition-colors disabled:opacity-50"
+          >
+            {currentKeyStatus === 'validating' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : currentKeyStatus === 'valid' ? (
+              <Check className="w-4 h-4 text-green-500" />
+            ) : null}
+            Test Connection
+          </button>
+        </div>
+
+        {currentKeyStatus === 'invalid' && (
+          <p className="text-xs text-red-500 mb-4">
+            Invalid API key. Please check and try again.
+          </p>
         )}
 
         <button
-          onClick={toggleSettings}
-          className="w-full bg-accent text-white py-3 rounded-[8px] font-semibold text-sm mt-2 hover:opacity-90 transition-opacity"
+          onClick={handleSave}
+          disabled={!apiKey.trim() || isSaving}
+          className="w-full bg-accent text-white py-3 rounded-[8px] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          Save Configuration
+          {isSaving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
     </div>

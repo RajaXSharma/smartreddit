@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '../../components/Header';
 import { PostInfo } from '../../components/PostInfo';
@@ -8,25 +8,35 @@ import { ChatView } from '../../components/ChatView';
 import { SettingsModal } from '../../components/SettingsModal';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
+import { ApiError } from '../../components/ApiError';
 import { useUIStore } from '../../hooks/useUIStore';
+import { useSettingsStore } from '../../hooks/useSettingsStore';
 import { useRedditContent } from '../../hooks/useRedditContent';
 import { useSummaryQuery } from '../../queries/useSummaryQuery';
 import { useChatMutation } from '../../queries/useChatMutation';
-import type { ChatMessage } from '../../lib/types';
+import type { ChatMessage, ApiError as ApiErrorType } from '../../lib/types';
 
 export default function App() {
   const { activeTab, theme } = useUIStore();
+  const { init: initSettings, isInitialized } = useSettingsStore();
   const queryClient = useQueryClient();
   const { content, isLoading: contentLoading, error: contentError, refetch } = useRedditContent();
 
+  const [isStreaming, setIsStreaming] = useState(false);
+
   const postUrl = content ? window.location.href : '';
 
-  const { data: summaryData, isLoading: summaryLoading } = useSummaryQuery(
+  const { data: summaryData, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useSummaryQuery(
     postUrl,
     content
   );
 
-  const chatMutation = useChatMutation(postUrl, content);
+  const chatMutation = useChatMutation(
+    postUrl,
+    content,
+    () => setIsStreaming(true),
+    () => setIsStreaming(false)
+  );
 
   const messages =
     queryClient.getQueryData<ChatMessage[]>(['chat', postUrl]) || [
@@ -36,6 +46,12 @@ export default function App() {
           "Hello! I've read the post and comments. What would you like to know about the discussion?",
       },
     ];
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initSettings();
+    }
+  }, [isInitialized, initSettings]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -61,6 +77,10 @@ export default function App() {
       return (num / 1000).toFixed(1) + 'k';
     }
     return num.toString();
+  };
+
+  const isApiError = (error: unknown): error is ApiErrorType => {
+    return typeof error === 'object' && error !== null && 'type' in error && 'message' in error;
   };
 
   return (
@@ -94,6 +114,8 @@ export default function App() {
               />
               {summaryLoading ? (
                 <LoadingState />
+              ) : summaryError && isApiError(summaryError) ? (
+                <ApiError error={summaryError} onRetry={refetchSummary} />
               ) : summaryData ? (
                 <SummaryView
                   data={summaryData}
@@ -106,7 +128,11 @@ export default function App() {
 
           {activeTab === 'chat' && (
             <div className="flex-1 flex flex-col overflow-hidden px-4 pb-4">
-              <ChatView messages={messages} onSendMessage={handleSendMessage} />
+              <ChatView
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isStreaming={isStreaming}
+              />
             </div>
           )}
         </div>
