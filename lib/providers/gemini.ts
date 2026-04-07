@@ -3,9 +3,7 @@ import type { ScrapedContent, SummaryResponse, ChatMessage, ApiError } from '../
 import { buildSummaryPrompt, buildChatSystemPrompt, parseSummaryResponse } from './prompts';
 
 const GEMINI_MODELS: Model[] = [
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
 ];
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';

@@ -26,7 +26,7 @@ export async function initSettings(): Promise<StoredSettings> {
 
   const settings: StoredSettings = {
     activeProvider: 'gemini',
-    activeModel: 'gemini-2.0-flash',
+    activeModel: 'gemini-2.5-flash-lite',
     keys: {},
     encryptionSalt: generateSalt(),
   };

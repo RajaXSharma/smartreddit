@@ -21,7 +21,7 @@ interface SettingsStore {
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   activeProvider: 'gemini',
-  activeModel: 'gemini-2.0-flash',
+  activeModel: 'gemini-2.5-flash-lite',
   keyStatus: { gemini: 'none' },
   isInitialized: false,
 
