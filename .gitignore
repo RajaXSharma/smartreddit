@@ -29,3 +29,7 @@ web-ext.config.ts
 design-*.html
 reddit-summarizer-design.md
 docs/*
+CLAUDE.md
+.claude
+.wolf
+.worktrees
