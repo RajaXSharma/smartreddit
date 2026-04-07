@@ -30,6 +30,7 @@ export interface SummaryResponse {
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
 // Reddit JSON API Types
@@ -89,3 +90,18 @@ export interface ScrapeFailure {
 }
 
 export type ScrapeResult = ScrapeSuccess | ScrapeFailure;
+
+export type ApiErrorType =
+  | 'INVALID_KEY'
+  | 'RATE_LIMITED'
+  | 'NETWORK_ERROR'
+  | 'PARSE_ERROR'
+  | 'QUOTA_EXCEEDED';
+
+export interface ApiError {
+  type: ApiErrorType;
+  message: string;
+  retryAfter?: number;
+}
+
+export type ProviderId = 'openai' | 'gemini' | 'grok';
