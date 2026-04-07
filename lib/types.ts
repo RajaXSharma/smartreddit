@@ -104,4 +104,4 @@ export interface ApiError {
   retryAfter?: number;
 }
 
-export type ProviderId = 'openai' | 'gemini' | 'grok';
+export type ProviderId = 'gemini';

@@ -20,9 +20,9 @@ interface SettingsStore {
 }
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
-  activeProvider: 'openai',
-  activeModel: 'gpt-4o-mini',
-  keyStatus: { openai: 'none', gemini: 'none', grok: 'none' },
+  activeProvider: 'gemini',
+  activeModel: 'gemini-2.0-flash',
+  keyStatus: { gemini: 'none' },
   isInitialized: false,
 
   async init() {
@@ -34,7 +34,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     });
 
     // Check which providers have keys
-    for (const providerId of ['openai', 'gemini', 'grok'] as ProviderId[]) {
+    for (const providerId of ['gemini'] as ProviderId[]) {
       const hasKey = await getApiKey(providerId);
       if (hasKey) {
         set((state) => ({

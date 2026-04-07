@@ -25,8 +25,8 @@ export async function initSettings(): Promise<StoredSettings> {
   if (existing) return existing;
 
   const settings: StoredSettings = {
-    activeProvider: 'openai',
-    activeModel: 'gpt-4o-mini',
+    activeProvider: 'gemini',
+    activeModel: 'gemini-2.0-flash',
     keys: {},
     encryptionSalt: generateSalt(),
   };
