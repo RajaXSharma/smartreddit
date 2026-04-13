@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../hooks/useUIStore';
 import { useSettingsStore } from '../hooks/useSettingsStore';
 import { providerList } from '../lib/providers';
+import { clearCache } from '../lib/storage';
 import type { ProviderId } from '../lib/types';
 
 export function SettingsModal() {
@@ -22,6 +24,25 @@ export function SettingsModal() {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const queryClient = useQueryClient();
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
+
+  const handleClearHistory = async () => {
+    if (!window.confirm('Clear all saved chats and summaries?')) return;
+
+    setIsClearing(true);
+    setClearSuccess(false);
+    try {
+      await clearCache();
+      queryClient.clear();
+      setClearSuccess(true);
+      setTimeout(() => setClearSuccess(false), 2000);
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   useEffect(() => {
     if (isSettingsOpen && !isInitialized) {
@@ -163,6 +184,20 @@ export function SettingsModal() {
         >
           {isSaving ? 'Saving...' : 'Save Configuration'}
         </button>
+
+        <div className="border-t border-border mt-4 pt-4">
+          <label className="block text-xs font-semibold mb-2">History</label>
+          <p className="text-xs text-text-secondary mb-3">
+            Removes all saved chats and summaries
+          </p>
+          <button
+            onClick={handleClearHistory}
+            disabled={isClearing}
+            className="w-full py-2.5 border border-red-500 text-red-500 rounded-[8px] text-sm font-medium hover:bg-red-500/10 transition-colors disabled:opacity-50"
+          >
+            {isClearing ? 'Clearing...' : clearSuccess ? 'Cleared!' : 'Clear All History'}
+          </button>
+        </div>
       </div>
     </div>
   );
