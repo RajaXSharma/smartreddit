@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { streamChatMessage } from '../lib/api';
+import { saveChat } from '../lib/storage';
 import type { ScrapedContent, ChatMessage } from '../lib/types';
 
 interface MutationContext {
@@ -40,10 +41,14 @@ export function useChatMutation(
         }
 
         // Finalize the message
-        queryClient.setQueryData<ChatMessage[]>(['chat', postUrl], [
+        const finalMessages: ChatMessage[] = [
           ...allMessages,
           { role: 'assistant', content: fullResponse, isStreaming: false },
-        ]);
+        ];
+        queryClient.setQueryData<ChatMessage[]>(['chat', postUrl], finalMessages);
+
+        // Persist to storage
+        await saveChat(postUrl, finalMessages);
       } finally {
         onStreamEnd?.();
       }
