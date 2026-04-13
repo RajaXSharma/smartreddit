@@ -1,9 +1,10 @@
 interface MessageBubbleProps {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
-export function MessageBubble({ role, content }: MessageBubbleProps) {
+export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps) {
   const isUser = role === 'user';
 
   return (
@@ -15,6 +16,9 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
       }`}
     >
       {content}
+      {isStreaming && (
+        <span className="inline-block w-2 h-4 ml-0.5 bg-current animate-pulse" />
+      )}
     </div>
   );
 }
