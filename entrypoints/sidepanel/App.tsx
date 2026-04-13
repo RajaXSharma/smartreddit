@@ -12,6 +12,7 @@ import { ApiError } from '../../components/ApiError';
 import { useUIStore } from '../../hooks/useUIStore';
 import { useSettingsStore } from '../../hooks/useSettingsStore';
 import { useRedditContent } from '../../hooks/useRedditContent';
+import { useHydrateCache } from '../../hooks/useHydrateCache';
 import { useSummaryQuery } from '../../queries/useSummaryQuery';
 import { useChatMutation } from '../../queries/useChatMutation';
 import type { ChatMessage, ApiError as ApiErrorType } from '../../lib/types';
@@ -25,6 +26,8 @@ export default function App() {
   const [isStreaming, setIsStreaming] = useState(false);
 
   const postUrl = content ? window.location.href : '';
+
+  useHydrateCache(postUrl || null);
 
   const { data: summaryData, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useSummaryQuery(
     postUrl,
